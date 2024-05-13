@@ -1,36 +1,30 @@
-var satisfy;
-var satisfyRate;
-var timeToWait;
-var timeToWait429;
-var totalCrowns;
-var currentQuiz;
-var openThisQuiz;
-var time;
-var interval;
-var quizList = ["Adventuring", "Conjuring", "Magical", "Marleybone", "Mystical", "Spellbinding", "Spells", "Valencia", "Wizard City", "Zafaria"];
+let satisfy;
+let satisfyRate;
+let timeToWait;
+let timeToWait429;
+let totalCrowns;
+let currentQuiz;
+let openThisQuiz;
+let time;
+let interval;
 
-//When the extension is installed, check if user already has saved data, create a new user
-chrome.runtime.onInstalled.addListener(function (details) {
-    if (details.reason == "install") {
-        createUser().then(function () {
-            //TODO: When user installs extension and user is created, open crowns.krolpowered to an introduction/how to use page
-            //window.open("chrome-extension://aihenldiapgpgknjngnabfnjdjjffljp/options/options.html");
-        });
-    }
-    else if (details.reason == "update") {
-        onUpdate();
-    }
-});
-
-function onUpdate() {
-        chrome.storage.sync.set({
-            automaticSelection: true
-        });
+const quizDict = {
+    "Adventuring": "https://www.wizard101.com/quiz/trivia/game/wizard101-adventuring-trivia",
+    "Conjuring": "https://www.wizard101.com/quiz/trivia/game/wizard101-conjuring-trivia",
+    "Magical": "https://www.wizard101.com/quiz/trivia/game/wizard101-magical-trivia",
+    "Marleybone": "https://www.wizard101.com/quiz/trivia/game/wizard101-marleybone-trivia",
+    "Mystical": "https://www.wizard101.com/quiz/trivia/game/wizard101-mystical-trivia",
+    "Spellbinding": "https://www.wizard101.com/quiz/trivia/game/wizard101-spellbinding-trivia",
+    "Spells": "https://www.wizard101.com/quiz/trivia/game/wizard101-spells-trivia",
+    "Valencia": "https://www.wizard101.com/quiz/trivia/game/pirate101-valencia-trivia",
+    "Wizard City": "https://www.wizard101.com/quiz/trivia/game/wizard101-wizard-city-trivia",
+    "Zafaria": "https://www.wizard101.com/quiz/trivia/game/wizard101-zafaria-trivia"
 }
+const quizList = Object.keys(quizDict);
 
 //Create a user when they first install the extension, use default values
 function createUser() {
-    return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve) {
         chrome.storage.sync.set({
             playSound: true,
             soundFile: "windows.wav",
@@ -41,16 +35,48 @@ function createUser() {
             satisfyRate: 3,
             timeToWait: 30,
             timeToWait429: 60,
-            totalCrowns: 0
+            totalCrowns: 0,
+            account: "",
+            password: ""
         });
         resolve();
     });
 }
 
+function onUpdate() {
+    chrome.storage.sync.set({
+        automaticSelection: true
+    });
+}
+
+function getOptions() {
+    chrome.storage.sync.get(['satisfy', 'satisfyRate', 'timeToWait', 'timeToWait429', 'totalCrowns'], function (items) {
+        satisfy = items.satisfy;
+        satisfyRate = items.satisfyRate;
+        timeToWait = items.timeToWait;
+        timeToWait429 = items.timeToWait429;
+        totalCrowns = items.totalCrowns;
+    });
+}
+
+async function getCurrentTab() {
+    const queryOptions = { active: true, currentWindow: true };
+    let [tab] = await chrome.tabs.query(queryOptions);
+    return tab;
+}
+
+//When the extension is installed, check if user already has saved data, create a new user
+chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason == "install")
+        createUser().then(() => chrome.tabs.create({ url: chrome.runtime.getURL('options/options.html') }));
+    else if (details.reason == "update")
+        onUpdate();
+});
+
 //If the options are changed, load them here
 chrome.storage.onChanged.addListener(function (changes) {
-    for (var key in changes) {
-        var storageChange = changes[key];
+    for (const key in changes) {
+        let storageChange = changes[key];
         switch (key) {
             case "satisfy":
                 satisfy = storageChange.newValue;
@@ -71,19 +97,9 @@ chrome.storage.onChanged.addListener(function (changes) {
 });
 
 //Browser icon clicked, open freekigames
-chrome.browserAction.onClicked.addListener(function () {
-    window.open("https://www.wizard101.com/quiz/trivia/game/wizard101-trivia", "Quiz");
+chrome.action.onClicked.addListener(tab => {
+    chrome.tabs.update(tab.id, { url: "https://www.wizard101.com/quiz/trivia/game/wizard101-trivia" });
 });
-
-function getOptions() {
-    chrome.storage.sync.get(['satisfy', 'satisfyRate', 'timeToWait', 'timeToWait429', 'totalCrowns'], function (items) {
-        satisfy = items.satisfy;
-        satisfyRate = items.satisfyRate;
-        timeToWait = items.timeToWait;
-        timeToWait429 = items.timeToWait429;
-        totalCrowns = items.totalCrowns;
-    });
-}
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     switch (message.greeting) {
@@ -142,45 +158,10 @@ function stopCounter() {
     openQuiz();
 }
 
-function openQuiz() {
+async function openQuiz() {
     console.log("Starting next quiz");
-    switch (openThisQuiz) {
-        case 'Adventuring':
-            window.open("https://www.wizard101.com/quiz/trivia/game/wizard101-adventuring-trivia", "Quiz");
-            break;
-        case 'Conjuring':
-            window.open("https://www.wizard101.com/quiz/trivia/game/wizard101-conjuring-trivia", "Quiz");
-            break;
-        case 'Magical':
-            window.open("https://www.wizard101.com/quiz/trivia/game/wizard101-magical-trivia", "Quiz");
-            break;
-        case 'Marleybone':
-            window.open("https://www.wizard101.com/quiz/trivia/game/wizard101-marleybone-trivia", "Quiz");
-            break;
-        case 'Mystical':
-            window.open("https://www.wizard101.com/quiz/trivia/game/wizard101-mystical-trivia", "Quiz");
-            break;
-        case 'Spellbinding':
-            window.open("https://www.wizard101.com/quiz/trivia/game/wizard101-spellbinding-trivia", "Quiz");
-            break;
-        case 'Spells':
-            window.open("https://www.wizard101.com/quiz/trivia/game/wizard101-spells-trivia", "Quiz");
-            break;
-        case 'Valencia':
-            window.open("https://www.wizard101.com/quiz/trivia/game/pirate101-valencia-trivia", "Quiz");
-            break;
-        case 'Wizard City':
-            window.open("https://www.wizard101.com/quiz/trivia/game/wizard101-wizard-city-trivia", "Quiz");
-            break;
-        case 'Zafaria':
-            window.open("https://www.wizard101.com/quiz/trivia/game/wizard101-zafaria-trivia", "Quiz");
-            break;
-        default:
-            window.open("https://www.wizard101.com/quiz/trivia/game/wizard101-adventuring-trivia", "Quiz");
-            break;
-    }
+    let tab = getCurrentTab();
+    chrome.tabs.update(tab.id, { url: quizDict[openThisQuiz] });
 }
 
-window.onload = (function () {
-    getOptions();
-})
+getOptions();
