@@ -1,121 +1,137 @@
 <head>
-    <meta charset="utf-8" />
-    <script src="options.js"></script>
-    <link rel="stylesheet" type="text/css" href="options.css">
-    <title> 每日皇冠幣測驗答題擴展插件 - 選項 </title>
+  <meta charset="utf-8" />
+  <script src="options.js"></script>
+  <link rel="stylesheet" type="text/css" href="options.css">
+  <title> 每日皇冠幣測驗答題擴展插件 - 選項 </title>
 </head>
 
 <body style="overflow: hidden;">
-    <div id="loadingIcon" style="margin:auto;height:100%;width:100%;">
-        <div id="loader"></div>
-    </div>
-    <div id="optionsPage" style="margin:auto;height:100%;width:100%;display:none" class="animate-bottom">
-        <div id="container" class="container">
-            <div id="container-header" class="container-header">
-                <div style="margin: auto; flex: 1;text-align: center;"><img class="icon" src="../icons/icon_128.png">
-                </div>
-                <div style="flex: 15; text-align: center">
-                    <p class="title">每日皇冠幣測驗答題擴展插件</p>
-                </div>
-                <div style="margin: auto; flex: 1;text-align: center;"><button id="close" class="close">X</button></div>
-            </div>
-            <div id="container-body" class="container-body">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>所賺得的總皇冠幣數: <span id="totalCrowns"></span></th>
-                        </tr>
-                    </thead>
-                </table>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>聲音</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><label class="containerCheckMark"><input id="sound" type="checkbox" checked="true">
-                                    <span class="checkmark"></span>在測驗結束時播放聲音</label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>選擇要使用的音訊檔案:
-                                <select id="soundFile"
-                                    style="border: none;border-radius: 4px;font-size: 1em; padding-left: 5px;">
-                                    <option value="beep.wav">Beep</option>
-                                    <option value="magic.wav">Magic</option>
-                                    <option value="sonar.wav">Sonar</option>
-                                    <option value="squeaky.wav">Squeaky</option>
-                                    <option value="windows.wav">Windows</option>
-                                </select><button id="audioTest" class="audioTest">測試音訊</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>答案選擇</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><label class="containerCheckMark"><input id="automaticSelection" type="checkbox"><span
-                                        class="checkmark"></span>自動選擇答案</label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label>選擇一種顏色來強調答案 <input id="color" type="color"
-                                        value="#00b300" style="border: none;"></label></td>
-                        </tr>
-                        <tr>
-                            <td>在 <input id="timeToWaitQuestion" type="number" value="2"
-                                    class="textInput" min="0" max="60"> 秒後選答案。 (0-60)
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Too Many Requests Prevention and Handling</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><label class="containerCheckMark"><input id="satisfy" type="checkbox"
-                                        checked="true"><span class="checkmark"></span>Show the Too Many Requests
-                                    Satisfaction page</label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Show the Too Many Requests Satisfaction page every <input id="satisfyRate" type="number"
-                                    step="1" value="2" class="textInput" min="1" max="9"> quizzes. (1-9)
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Show the Too Many Requests Satisfaction page for <input id="timeToWait" type="number"
-                                    step="1" value="60" min="1" max="999" class="textInput"> seconds. (1-999) </td>
-                        </tr>
-                        <tr>
-                            <td>Show the Too Many Requests Error page for <input id="timeToWait429" type="number"
-                                    step="1" value="30" class="textInput" min="0" max="999"> seconds. (0-999) </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div id="container-footer" class="container-footer">
-                <div style="margin: auto auto auto 30px; flex: 1;text-align: left;"><button id="default"
-                        class="default">預設設定</button></div>
-                <div id="status" style="flex: 1;margin:auto;text-align: center; font-size: 1em;"></div>
-                <div style="display: flex; flex: 1;">
-                    <div style="margin: auto; flex: 1;text-align: center;"><button id="cancel"
-                            class="cancel">取消</button></div>
-                    <div style="margin: auto; flex: 1;text-align: center;"><button id="save" class="save">保存</button>
-                    </div>
-                </div>
-            </div>
+  <div id="loadingIcon" style="margin:auto;height:100%;width:100%;">
+    <div id="loader"></div>
+  </div>
+  <div id="optionsPage" style="margin:auto;height:100%;width:100%;display:none" class="animate-bottom">
+    <div id="container" class="container">
+      <div id="container-header" class="container-header">
+        <div style="margin: auto; flex: 1;text-align: center;"><img class="icon" src="../icons/icon_128.png">
         </div>
+        <div style="flex: 15; text-align: center">
+          <p class="title">每日皇冠幣測驗答題擴展插件</p>
+        </div>
+        <div style="margin: auto; flex: 1;text-align: center;"><button id="close" class="close">X</button></div>
+      </div>
+      <div id="container-body" class="container-body">
+        <table>
+          <thead>
+            <tr>
+              <th>所賺得的總皇冠幣數: <span id="totalCrowns"></span></th>
+            </tr>
+          </thead>
+        </table>
+        <table>
+          <thead>
+            <tr>
+              <th>自動登入</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                帳號: <input id="account" type="text" class="textInput" />
+              </td>
+            </tr>
+            <tr>
+              <td>
+                密碼: <input id="password" type="password" class="textInput" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <table>
+          <thead>
+            <tr>
+              <th>聲音</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><label class="containerCheckMark"><input id="sound" type="checkbox" checked="true">
+                  <span class="checkmark"></span>在測驗結束時播放聲音</label>
+              </td>
+            </tr>
+            <tr>
+              <td>選擇要使用的音訊檔案:
+                <select id="soundFile" style="border: none;border-radius: 4px;font-size: 1em; padding-left: 5px;">
+                  <option value="beep.wav">Beep</option>
+                  <option value="magic.wav">Magic</option>
+                  <option value="sonar.wav">Sonar</option>
+                  <option value="squeaky.wav">Squeaky</option>
+                  <option value="windows.wav">Windows</option>
+                </select><button id="audioTest" class="audioTest">測試音訊</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <table>
+          <thead>
+            <tr>
+              <th>答案選擇</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><label class="containerCheckMark"><input id="automaticSelection" type="checkbox"><span
+                    class="checkmark"></span>自動選擇答案</label>
+              </td>
+            </tr>
+            <tr>
+              <td><label>選擇一種顏色來強調答案 <input id="color" type="color" value="#00b300" style="border: none;"></label></td>
+            </tr>
+            <tr>
+              <td>在 <input id="timeToWaitQuestion" type="number" value="2" class="textInput" min="0" max="60"> 秒後選答案。
+                (0-60)
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <table>
+          <thead>
+            <tr>
+              <th>Too Many Requests Prevention and Handling</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><label class="containerCheckMark"><input id="satisfy" type="checkbox" checked="true"><span
+                    class="checkmark"></span>Show the Too Many Requests
+                  Satisfaction page</label>
+              </td>
+            </tr>
+            <tr>
+              <td>Show the Too Many Requests Satisfaction page every <input id="satisfyRate" type="number" step="1"
+                  value="2" class="textInput" min="1" max="9"> quizzes. (1-9)
+              </td>
+            </tr>
+            <tr>
+              <td>Show the Too Many Requests Satisfaction page for <input id="timeToWait" type="number" step="1"
+                  value="60" min="1" max="999" class="textInput"> seconds. (1-999) </td>
+            </tr>
+            <tr>
+              <td>Show the Too Many Requests Error page for <input id="timeToWait429" type="number" step="1" value="30"
+                  class="textInput" min="0" max="999"> seconds. (0-999) </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="container-footer" class="container-footer">
+        <div style="margin: auto auto auto 30px; flex: 1;text-align: left;"><button id="default"
+            class="default">預設設定</button></div>
+        <div id="status" style="flex: 1;margin:auto;text-align: center; font-size: 1em;"></div>
+        <div style="display: flex; flex: 1;">
+          <div style="margin: auto; flex: 1;text-align: center;"><button id="cancel" class="cancel">取消</button></div>
+          <div style="margin: auto; flex: 1;text-align: center;"><button id="save" class="save">保存</button>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </body>

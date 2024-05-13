@@ -8,12 +8,15 @@ var satisfyRate;
 var timeToWait;
 var timeToWait429;
 
+let account;
+let password;
+
 var saveInfo;
 var totalCrowns;
 
 function restoreOptions() {
   console.log("Restoring options");
-  chrome.storage.sync.get(['playSound', 'soundFile', 'automaticSelection', 'color', 'timeToWaitQuestion', 'satisfy', 'satisfyRate', 'timeToWait', 'timeToWait429', 'totalCrowns'], function (items) {
+  chrome.storage.sync.get(['playSound', 'soundFile', 'automaticSelection', 'color', 'timeToWaitQuestion', 'satisfy', 'satisfyRate', 'timeToWait', 'timeToWait429', 'totalCrowns', 'account', 'password'], function (items) {
     document.getElementById('totalCrowns').innerText = items.totalCrowns;
 
     document.getElementById('sound').checked = items.playSound;
@@ -27,6 +30,9 @@ function restoreOptions() {
     document.getElementById('satisfyRate').value = items.satisfyRate;
     document.getElementById('timeToWait').value = items.timeToWait;
     document.getElementById('timeToWait429').value = items.timeToWait429;
+
+    document.getElementById('account').value = items.account;
+    document.getElementById('password').value = items.password;
   });
   setTimeout(function () {
     document.getElementById('loadingIcon').style.display = "none";
@@ -40,6 +46,9 @@ function closeWindow() {
 
 function setDefaultOptions() {
   console.log("Default options");
+  document.getElementById('account').value = "";
+  document.getElementById('password').value = "";
+
   document.getElementById('sound').checked = true;
   document.getElementById('soundFile').value = "windows.wav";
 
@@ -55,12 +64,12 @@ function setDefaultOptions() {
 }
 
 function saveOptions() {
-    saveInfo = true;
-    resetErrors();
-    getValues();
-    errorCheck();
-    if (saveInfo)
-      saveInformation();
+  saveInfo = true;
+  resetErrors();
+  getValues();
+  errorCheck();
+  if (saveInfo)
+    saveInformation();
 }
 
 function resetErrors() {
@@ -82,6 +91,9 @@ function getValues() {
   satisfyRate = parseInt(document.getElementById('satisfyRate').value);
   timeToWait = parseInt(document.getElementById('timeToWait').value);
   timeToWait429 = parseInt(document.getElementById('timeToWait429').value);
+
+  account = document.getElementById('account').value;
+  password = document.getElementById('password').value;
 }
 
 function errorCheck() {
@@ -121,7 +133,9 @@ function saveInformation() {
     satisfy: satisfy,
     satisfyRate: satisfyRate,
     timeToWait: timeToWait,
-    timeToWait429: timeToWait429
+    timeToWait429: timeToWait429,
+    account: account,
+    password: password
   }, function () {
     updateStatus("已儲存設定");
   });

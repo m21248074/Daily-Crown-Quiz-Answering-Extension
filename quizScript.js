@@ -1,13 +1,13 @@
-var playSound;
-var soundFile;
-var automaticSelection;
-var highlightColor;
-var timeToWaitQuestion;
-var totalCrowns;
-var quizName;
+let playSound;
+let soundFile;
+let automaticSelection;
+let highlightColor;
+let timeToWaitQuestion;
+let totalCrowns;
+let quizName;
 
 function getData() {
-    return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve) {
         chrome.storage.sync.get(['playSound', 'soundFile', 'automaticSelection', 'color', 'timeToWaitQuestion', 'totalCrowns'], function (items) {
             playSound = items.playSound;
             soundFile = items.soundFile;
@@ -35,7 +35,7 @@ getData().then(function () {
                 chrome.runtime.sendMessage({ greeting: 'nextQuiz', when: "now" });
             else {
                 //results page, open the captcha or load the next quiz.
-                if (document.getElementsByClassName('rewardText') && document.getElementsByClassName('rewardText')[0].innerText[0] == 'Y') {
+                if (document.getElementsByClassName('rewardText').length && document.getElementsByClassName('rewardText')[0].innerText[0] == 'Y') {
                     document.getElementsByClassName("loginitem")[0].click();
                     if (playSound) {
                         var sound;
