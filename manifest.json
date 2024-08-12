@@ -67,6 +67,14 @@
       "js": [
         "429Wait.js"
       ]
+    },
+    {
+      "matches": [
+        "https://www.wizard101.com/user/kiaccounts/crownshistory/game"
+      ],
+      "js": [
+        "result.js"
+      ]
     }
   ],
   "web_accessible_resources": [

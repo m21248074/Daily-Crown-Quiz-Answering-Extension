@@ -93,7 +93,7 @@
             </tr>
           </tbody>
         </table>
-        <table>
+        <table style="display: none;">
           <thead>
             <tr>
               <th>Too Many Requests Prevention and Handling</th>
@@ -101,9 +101,12 @@
           </thead>
           <tbody>
             <tr>
-              <td><label class="containerCheckMark"><input id="satisfy" type="checkbox" checked="true"><span
-                    class="checkmark"></span>Show the Too Many Requests
-                  Satisfaction page</label>
+              <td>
+                <label class="containerCheckMark">
+                  <input id="satisfy" type="checkbox" checked="true">
+                  <span class="checkmark"></span>
+                  Show the Too Many Requests Satisfaction page
+                </label>
               </td>
             </tr>
             <tr>
@@ -123,12 +126,16 @@
         </table>
       </div>
       <div id="container-footer" class="container-footer">
-        <div style="margin: auto auto auto 30px; flex: 1;text-align: left;"><button id="default"
-            class="default">預設設定</button></div>
+        <div style="margin: auto auto auto 30px; flex: 1;text-align: left;">
+          <button id="default" class="default">預設設定</button>
+        </div>
         <div id="status" style="flex: 1;margin:auto;text-align: center; font-size: 1em;"></div>
         <div style="display: flex; flex: 1;">
-          <div style="margin: auto; flex: 1;text-align: center;"><button id="cancel" class="cancel">取消</button></div>
-          <div style="margin: auto; flex: 1;text-align: center;"><button id="save" class="save">保存</button>
+          <div style="margin: auto; flex: 1;text-align: center;">
+            <button id="cancel" class="cancel">取消</button>
+          </div>
+          <div style="margin: auto; flex: 1;text-align: center;">
+            <button id="save" class="save">保存</button>
           </div>
         </div>
       </div>
