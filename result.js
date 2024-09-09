@@ -8,7 +8,7 @@ for (let tr of trs) {
     let td = tr.getElementsByTagName("td")[0];
     let diff = Date.now() - Date.parse(`${td.innerText} GMT`)
     let hours = diff / 1000 / 60 / 60;
-    if (hours < 24) {
+    if (hours < 20) {
       tr.style.backgroundColor = "orange";
       last = new Date(Date.parse(`${td.innerText} GMT`));
       td.innerText = `${i + 1}. ${td.innerText}`;
@@ -16,7 +16,8 @@ for (let tr of trs) {
     }
   }
 }
-last.setDate(last.getDate() + 1);
+// last.setDate(last.getDate() + 1);
+last.setTime(last.getTime() + (20*60*60*1000));
 let hintElement = document.createElement('span');
 hintElement.innerText = `下次更新時間約為 ${last.toLocaleString()}`;
 hintElement.style.color = 'red';
