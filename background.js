@@ -59,10 +59,14 @@ function getOptions() {
 	});
 }
 
-async function getCurrentTab() {
-	const queryOptions = { active: true, currentWindow: true };
-	let [tab] = await chrome.tabs.query(queryOptions);
-	return tab;
+//Remember which tab runs the quizzes, so navigation never touches other tabs
+function setQuizTab(tabId) {
+	return chrome.storage.session.set({ quizTabId: tabId });
+}
+
+async function getQuizTabId() {
+	const { quizTabId } = await chrome.storage.session.get('quizTabId');
+	return quizTabId;
 }
 
 //When the extension is installed, check if user already has saved data, create a new user
@@ -104,8 +108,9 @@ chrome.action.onClicked.addListener(tab => {
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 	switch (message.greeting) {
 		case 'startQuiz':
+			setQuizTab(sender.tab.id);
 			openThisQuiz = quizList[0];
-			openQuiz();
+			openQuiz(sender.tab.id);
 			break;
 		case 'setCurrentQuiz':
 			currentQuiz = message.currentQuiz;
@@ -117,7 +122,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			getOptions();
 			quizIndex = quizList.indexOf(currentQuiz) + 1;
 			openThisQuiz = quizList[quizIndex];
-			openQuiz();
+			openQuiz(sender.tab.id);
 			// if (!satisfy || message.when || quizIndex % satisfyRate != 0) {
 			// 	openQuiz();
 			// }
@@ -135,8 +140,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			stopCounter();
 			break;
 		case "endQuiz":
-			let tab = getCurrentTab();
-			chrome.tabs.update(tab.id, {
+			chrome.tabs.update(sender.tab.id, {
 				url: "https://www.wizard101.com/user/kiaccounts/crownshistory/game"
 			});
 			break;
@@ -153,7 +157,7 @@ function countDown(timeWaiting) {
 		time -= 1;
 		if (time == 0) {
 			clearInterval(interval);
-			openQuiz();
+			getQuizTabId().then(openQuiz);
 		}
 	}, 1000);
 }
@@ -162,13 +166,12 @@ function stopCounter() {
 	console.log("Stopping counter");
 	clearInterval(interval);
 	time = 0;
-	openQuiz();
+	getQuizTabId().then(openQuiz);
 }
 
-async function openQuiz() {
+function openQuiz(tabId) {
 	console.log("Starting next quiz");
-	let tab = getCurrentTab();
-	chrome.tabs.update(tab.id, { url: quizDict[openThisQuiz] });
+	chrome.tabs.update(tabId, { url: quizDict[openThisQuiz] });
 }
 
 getOptions();
