@@ -17,8 +17,12 @@ for (let tr of trs) {
   }
 }
 // last.setDate(last.getDate() + 1);
-last.setTime(last.getTime() + (20*60*60*1000));
-let hintElement = document.createElement('span');
-hintElement.innerText = `下次更新時間約為 ${last.toLocaleString()}`;
-hintElement.style.color = 'red';
-hint.append(hintElement);
+if (last) {
+  last.setTime(last.getTime() + (20*60*60*1000));
+  let hintElement = document.createElement('span');
+  hintElement.innerText = `下次更新時間約為 ${last.toLocaleString()}`;
+  hintElement.style.color = 'red';
+  hint.append(hintElement);
+}
+//No recent earnings means the quizzes are available now, so there is nothing to schedule
+chrome.runtime.sendMessage({ greeting: 'scheduleNext', when: last ? last.getTime() : undefined });

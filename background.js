@@ -21,6 +21,8 @@ const quizDict = {
 	"Zafaria": "https://www.wizard101.com/quiz/trivia/game/wizard101-zafaria-trivia"
 }
 const quizList = Object.keys(quizDict);
+const startUrl = "https://www.wizard101.com/quiz/trivia/game/wizard101-trivia";
+const historyUrl = "https://www.wizard101.com/user/kiaccounts/crownshistory/game";
 
 //Create a user when they first install the extension, use default values
 function createUser() {
@@ -37,7 +39,10 @@ function createUser() {
 			timeToWait429: 60,
 			totalCrowns: 0,
 			account: "",
-			password: ""
+			password: "",
+			scheduledStart: false,
+			showNotification: true,
+			focusOnCaptcha: true
 		});
 		resolve();
 	});
@@ -46,6 +51,15 @@ function createUser() {
 function onUpdate() {
 	chrome.storage.sync.set({
 		automaticSelection: true
+	});
+	//Fill in options added after the user installed the extension
+	chrome.storage.sync.get(['scheduledStart', 'showNotification', 'focusOnCaptcha'], function (items) {
+		if (items.scheduledStart === undefined)
+			chrome.storage.sync.set({ scheduledStart: false });
+		if (items.showNotification === undefined)
+			chrome.storage.sync.set({ showNotification: true });
+		if (items.focusOnCaptcha === undefined)
+			chrome.storage.sync.set({ focusOnCaptcha: true });
 	});
 }
 
@@ -59,10 +73,14 @@ function getOptions() {
 	});
 }
 
-async function getCurrentTab() {
-	const queryOptions = { active: true, currentWindow: true };
-	let [tab] = await chrome.tabs.query(queryOptions);
-	return tab;
+//Remember which tab runs the quizzes, so navigation never touches other tabs
+function setQuizTab(tabId) {
+	return chrome.storage.session.set({ quizTabId: tabId });
+}
+
+async function getQuizTabId() {
+	const { quizTabId } = await chrome.storage.session.get('quizTabId');
+	return quizTabId;
 }
 
 //When the extension is installed, check if user already has saved data, create a new user
@@ -92,20 +110,50 @@ chrome.storage.onChanged.addListener(function (changes) {
 				break;
 			case "totalCrowns":
 				totalCrowns = storageChange.newValue;
+				break;
+			case "scheduledStart":
+				if (!storageChange.newValue)
+					chrome.alarms.clear('dailyStart');
 		}
 	}
 });
 
 //Browser icon clicked, open freekigames
 chrome.action.onClicked.addListener(tab => {
-	chrome.tabs.update(tab.id, { url: "https://www.wizard101.com/quiz/trivia/game/wizard101-trivia" });
+	chrome.tabs.update(tab.id, { url: startUrl });
 });
+
+//Scheduled start: open a new tab when the quizzes reset, login.js takes it from there
+chrome.alarms.onAlarm.addListener(alarm => {
+	if (alarm.name != 'dailyStart')
+		return;
+	chrome.storage.sync.get(['scheduledStart'], function (items) {
+		if (items.scheduledStart)
+			chrome.tabs.create({ url: startUrl });
+	});
+});
+
+//Bring the quiz tab to the front when the captcha notification is clicked
+chrome.notifications.onClicked.addListener(async notificationId => {
+	if (notificationId != 'captcha')
+		return;
+	chrome.notifications.clear('captcha');
+	const tabId = await getQuizTabId();
+	if (tabId !== undefined)
+		focusTab(tabId);
+});
+
+async function focusTab(tabId) {
+	const tab = await chrome.tabs.update(tabId, { active: true });
+	chrome.windows.update(tab.windowId, { focused: true });
+}
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 	switch (message.greeting) {
 		case 'startQuiz':
+			setQuizTab(sender.tab.id);
 			openThisQuiz = quizList[0];
-			openQuiz();
+			openQuiz(sender.tab.id);
 			break;
 		case 'setCurrentQuiz':
 			currentQuiz = message.currentQuiz;
@@ -114,10 +162,11 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			sendResponse({ quizName: currentQuiz });
 			break;
 		case 'nextQuiz':
+			chrome.notifications.clear('captcha');
 			getOptions();
 			quizIndex = quizList.indexOf(currentQuiz) + 1;
 			openThisQuiz = quizList[quizIndex];
-			openQuiz();
+			openQuiz(sender.tab.id);
 			// if (!satisfy || message.when || quizIndex % satisfyRate != 0) {
 			// 	openQuiz();
 			// }
@@ -134,10 +183,44 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 		case "cancelTimer":
 			stopCounter();
 			break;
+		case "captchaReady":
+			setQuizTab(sender.tab.id);
+			chrome.storage.sync.get(['showNotification', 'focusOnCaptcha'], function (items) {
+				if (items.focusOnCaptcha)
+					focusTab(sender.tab.id);
+				if (!items.showNotification)
+					return;
+				chrome.notifications.create('captcha', {
+					type: "basic",
+					iconUrl: "icons/icon_128.png",
+					title: "需要完成驗證",
+					message: `${message.quizName} 測驗已作答完畢，點此切換到測驗分頁完成 CAPTCHA。`,
+					requireInteraction: true
+				});
+			});
+			break;
+		case "refreshSchedule":
+			//Read the next reset time from the crowns history page in a background tab
+			chrome.tabs.create({ url: historyUrl, active: false }).then(tab =>
+				chrome.storage.session.set({ scheduleTabId: tab.id }));
+			break;
+		case "scheduleNext":
+			chrome.storage.sync.get(['scheduledStart'], async function (items) {
+				const scheduled = Boolean(items.scheduledStart && message.when > Date.now());
+				if (scheduled)
+					await chrome.alarms.create('dailyStart', { when: message.when });
+				chrome.runtime.sendMessage({ greeting: 'scheduleUpdated', scheduled: scheduled }).catch(() => { });
+				const { scheduleTabId } = await chrome.storage.session.get('scheduleTabId');
+				if (scheduleTabId === sender.tab.id) {
+					chrome.storage.session.remove('scheduleTabId');
+					chrome.tabs.remove(sender.tab.id);
+				}
+			});
+			break;
 		case "endQuiz":
-			let tab = getCurrentTab();
-			chrome.tabs.update(tab.id, {
-				url: "https://www.wizard101.com/user/kiaccounts/crownshistory/game"
+			chrome.notifications.clear('captcha');
+			chrome.tabs.update(sender.tab.id, {
+				url: historyUrl
 			});
 			break;
 	}
@@ -153,7 +236,7 @@ function countDown(timeWaiting) {
 		time -= 1;
 		if (time == 0) {
 			clearInterval(interval);
-			openQuiz();
+			getQuizTabId().then(openQuiz);
 		}
 	}, 1000);
 }
@@ -162,13 +245,12 @@ function stopCounter() {
 	console.log("Stopping counter");
 	clearInterval(interval);
 	time = 0;
-	openQuiz();
+	getQuizTabId().then(openQuiz);
 }
 
-async function openQuiz() {
+function openQuiz(tabId) {
 	console.log("Starting next quiz");
-	let tab = getCurrentTab();
-	chrome.tabs.update(tab.id, { url: quizDict[openThisQuiz] });
+	chrome.tabs.update(tabId, { url: quizDict[openThisQuiz] });
 }
 
 getOptions();

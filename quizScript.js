@@ -30,13 +30,19 @@ getData().then(function () {
 		chrome.runtime.sendMessage({ greeting: 'setCurrentQuiz', currentQuiz: quizName });
 		//If it's not a question. Page is either results page or throttle page.
 		if (!document.getElementsByClassName('quizQuestion')[0]) {
-			//if throttle page, go to the next quiz.
-			if (document.getElementsByClassName('quizThrottle')[0] && quizName != "Zafaria")
-				chrome.runtime.sendMessage({ greeting: 'nextQuiz', when: "now" });
+			//if throttle page, the quiz is already done today: go to the next quiz, or finish after the last one.
+			if (document.getElementsByClassName('quizThrottle')[0]) {
+				if (quizName != "Zafaria")
+					chrome.runtime.sendMessage({ greeting: 'nextQuiz', when: "now" });
+				else
+					chrome.runtime.sendMessage({ greeting: 'endQuiz' });
+			}
 			else {
 				//results page, open the captcha or load the next quiz.
 				if (document.getElementsByClassName('rewardText').length && document.getElementsByClassName('rewardText')[0].innerText[0] == 'Y') {
 					document.getElementsByClassName("loginitem")[0].click();
+					chrome.runtime.sendMessage({ greeting: 'captchaReady', quizName: quizName });
+					flashTitle();
 					if (playSound) {
 						var sound;
 						sound = new Audio(chrome.runtime.getURL("sounds/" + soundFile));
@@ -63,6 +69,16 @@ getData().then(function () {
 		}
 	}
 })
+
+//Flash the tab title so a waiting captcha is visible even without system notifications
+function flashTitle() {
+	const originalTitle = document.title;
+	let flashing = false;
+	setInterval(() => {
+		flashing = !flashing;
+		document.title = flashing ? "⚠ 需要驗證" : originalTitle;
+	}, 1000);
+}
 
 function addCrowns() {
 	console.log(totalCrowns);
