@@ -81,7 +81,7 @@
 	{
 		"resources": [
 			"sounds/beep.wav",
-			"sounds/magical.wav",
+			"sounds/magic.wav",
 			"sounds/sonar.wav",
 			"sounds/squeaky.wav",
 			"sounds/windows.wav"
