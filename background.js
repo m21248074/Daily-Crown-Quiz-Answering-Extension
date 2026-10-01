@@ -107,6 +107,27 @@ async function finishQuiz(message, state) {
 	});
 }
 
+//Sent once per run, from the crowns history page so the next scheduled start is known
+async function showSummary(nextStart) {
+	const { progress } = await chrome.storage.local.get('progress');
+	if (!progress || progress.state != "done" || progress.summaryShown)
+		return;
+	await updateProgress({ summaryShown: true });
+	const { showNotification } = await chrome.storage.sync.get('showNotification');
+	if (!showNotification)
+		return;
+	const skipped = progress.done - progress.earned;
+	let text = `本次獲得 ${progress.earned * 10} 皇冠幣 (作答 ${progress.earned} 份`;
+	text += skipped ? `，${skipped} 份今日已完成)` : ")";
+	text += nextStart ? `\n下次自動開始: ${new Date(nextStart).toLocaleString()}` : "";
+	chrome.notifications.create('summary', {
+		type: "basic",
+		iconUrl: "icons/icon_128.png",
+		title: "今日測驗完成",
+		message: text
+	});
+}
+
 function showBadge(progress) {
 	const [text, color] = {
 		running: [`${progress.done}/${quizList.length}`, "#1a73e8"],
@@ -256,6 +277,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 				if (scheduled)
 					await chrome.alarms.create('dailyStart', { when: message.when });
 				chrome.runtime.sendMessage({ greeting: 'scheduleUpdated', scheduled: scheduled }).catch(() => { });
+				showSummary(scheduled ? message.when : undefined);
 				const { scheduleTabId } = await chrome.storage.session.get('scheduleTabId');
 				if (scheduleTabId === sender.tab.id) {
 					chrome.storage.session.remove('scheduleTabId');
