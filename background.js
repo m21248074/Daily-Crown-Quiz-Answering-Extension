@@ -83,6 +83,49 @@ async function getQuizTabId() {
 	return quizTabId;
 }
 
+//Progress of the current run. Kept in local storage so the badge and popup survive service worker restarts.
+//state: idle | running | captcha | done
+async function updateProgress(changes) {
+	const { progress } = await chrome.storage.local.get('progress');
+	const updated = { ...progress, ...changes };
+	await chrome.storage.local.set({ progress: updated });
+	showBadge(updated);
+	return updated;
+}
+
+function startProgress() {
+	return updateProgress({ state: "running", done: 0, earned: 0, startedAt: Date.now(), summaryShown: false });
+}
+
+//Called when a quiz is left behind, either answered (earned) or already done today
+async function finishQuiz(message, state) {
+	const { progress } = await chrome.storage.local.get('progress');
+	return updateProgress({
+		state: state,
+		done: quizList.indexOf(message.quizName) + 1,
+		earned: (progress?.earned || 0) + (message.earned ? 1 : 0)
+	});
+}
+
+function showBadge(progress) {
+	const [text, color] = {
+		running: [`${progress.done}/${quizList.length}`, "#1a73e8"],
+		captcha: ["!", "#d93025"],
+		done: ["✓", "#00b300"]
+	}[progress.state] || ["", "#00b300"];
+	chrome.action.setBadgeText({ text: text });
+	chrome.action.setBadgeBackgroundColor({ color: color });
+}
+
+//A run cannot survive a browser restart, so don't show a stale running state
+chrome.runtime.onStartup.addListener(async () => {
+	const { progress } = await chrome.storage.local.get('progress');
+	if (progress && (progress.state == "running" || progress.state == "captcha"))
+		updateProgress({ state: "idle" });
+	else if (progress)
+		showBadge(progress);
+});
+
 //When the extension is installed, check if user already has saved data, create a new user
 chrome.runtime.onInstalled.addListener((details) => {
 	if (details.reason == "install")
@@ -152,6 +195,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 	switch (message.greeting) {
 		case 'startQuiz':
 			setQuizTab(sender.tab.id);
+			startProgress();
 			openThisQuiz = quizList[0];
 			openQuiz(sender.tab.id);
 			break;
@@ -163,6 +207,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			break;
 		case 'nextQuiz':
 			chrome.notifications.clear('captcha');
+			finishQuiz(message, "running");
 			getOptions();
 			quizIndex = quizList.indexOf(currentQuiz) + 1;
 			openThisQuiz = quizList[quizIndex];
@@ -185,6 +230,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			break;
 		case "captchaReady":
 			setQuizTab(sender.tab.id);
+			updateProgress({ state: "captcha" });
 			chrome.storage.sync.get(['showNotification', 'focusOnCaptcha'], function (items) {
 				if (items.focusOnCaptcha)
 					focusTab(sender.tab.id);
@@ -219,6 +265,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			break;
 		case "endQuiz":
 			chrome.notifications.clear('captcha');
+			finishQuiz(message, "done");
 			chrome.tabs.update(sender.tab.id, {
 				url: historyUrl
 			});
