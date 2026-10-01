@@ -21,6 +21,7 @@ const quizDict = {
 	"Zafaria": "https://www.wizard101.com/quiz/trivia/game/wizard101-zafaria-trivia"
 }
 const quizList = Object.keys(quizDict);
+const startUrl = "https://www.wizard101.com/quiz/trivia/game/wizard101-trivia";
 
 //Create a user when they first install the extension, use default values
 function createUser() {
@@ -37,7 +38,9 @@ function createUser() {
 			timeToWait429: 60,
 			totalCrowns: 0,
 			account: "",
-			password: ""
+			password: "",
+			scheduledStart: false,
+			showNotification: true
 		});
 		resolve();
 	});
@@ -46,6 +49,13 @@ function createUser() {
 function onUpdate() {
 	chrome.storage.sync.set({
 		automaticSelection: true
+	});
+	//Fill in options added after the user installed the extension
+	chrome.storage.sync.get(['scheduledStart', 'showNotification'], function (items) {
+		if (items.scheduledStart === undefined)
+			chrome.storage.sync.set({ scheduledStart: false });
+		if (items.showNotification === undefined)
+			chrome.storage.sync.set({ showNotification: true });
 	});
 }
 
@@ -96,13 +106,39 @@ chrome.storage.onChanged.addListener(function (changes) {
 				break;
 			case "totalCrowns":
 				totalCrowns = storageChange.newValue;
+				break;
+			case "scheduledStart":
+				if (!storageChange.newValue)
+					chrome.alarms.clear('dailyStart');
 		}
 	}
 });
 
 //Browser icon clicked, open freekigames
 chrome.action.onClicked.addListener(tab => {
-	chrome.tabs.update(tab.id, { url: "https://www.wizard101.com/quiz/trivia/game/wizard101-trivia" });
+	chrome.tabs.update(tab.id, { url: startUrl });
+});
+
+//Scheduled start: open a new tab when the quizzes reset, login.js takes it from there
+chrome.alarms.onAlarm.addListener(alarm => {
+	if (alarm.name != 'dailyStart')
+		return;
+	chrome.storage.sync.get(['scheduledStart'], function (items) {
+		if (items.scheduledStart)
+			chrome.tabs.create({ url: startUrl });
+	});
+});
+
+//Bring the quiz tab to the front when the captcha notification is clicked
+chrome.notifications.onClicked.addListener(async notificationId => {
+	if (notificationId != 'captcha')
+		return;
+	chrome.notifications.clear('captcha');
+	const tabId = await getQuizTabId();
+	if (tabId === undefined)
+		return;
+	const tab = await chrome.tabs.update(tabId, { active: true });
+	chrome.windows.update(tab.windowId, { focused: true });
 });
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
@@ -119,6 +155,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			sendResponse({ quizName: currentQuiz });
 			break;
 		case 'nextQuiz':
+			chrome.notifications.clear('captcha');
 			getOptions();
 			quizIndex = quizList.indexOf(currentQuiz) + 1;
 			openThisQuiz = quizList[quizIndex];
@@ -139,7 +176,28 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 		case "cancelTimer":
 			stopCounter();
 			break;
+		case "captchaReady":
+			setQuizTab(sender.tab.id);
+			chrome.storage.sync.get(['showNotification'], function (items) {
+				if (!items.showNotification)
+					return;
+				chrome.notifications.create('captcha', {
+					type: "basic",
+					iconUrl: "icons/icon_128.png",
+					title: "需要完成驗證",
+					message: `${message.quizName} 測驗已作答完畢，點此切換到測驗分頁完成 CAPTCHA。`,
+					requireInteraction: true
+				});
+			});
+			break;
+		case "scheduleNext":
+			chrome.storage.sync.get(['scheduledStart'], function (items) {
+				if (items.scheduledStart && message.when > Date.now())
+					chrome.alarms.create('dailyStart', { when: message.when });
+			});
+			break;
 		case "endQuiz":
+			chrome.notifications.clear('captcha');
 			chrome.tabs.update(sender.tab.id, {
 				url: "https://www.wizard101.com/user/kiaccounts/crownshistory/game"
 			});

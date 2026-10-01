@@ -37,6 +37,7 @@ getData().then(function () {
 				//results page, open the captcha or load the next quiz.
 				if (document.getElementsByClassName('rewardText').length && document.getElementsByClassName('rewardText')[0].innerText[0] == 'Y') {
 					document.getElementsByClassName("loginitem")[0].click();
+					chrome.runtime.sendMessage({ greeting: 'captchaReady', quizName: quizName });
 					if (playSound) {
 						var sound;
 						sound = new Audio(chrome.runtime.getURL("sounds/" + soundFile));

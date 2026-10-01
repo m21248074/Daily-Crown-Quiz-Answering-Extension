@@ -7,6 +7,8 @@ var satisfy;
 var satisfyRate;
 var timeToWait;
 var timeToWait429;
+var scheduledStart;
+var showNotification;
 
 let account;
 let password;
@@ -16,7 +18,7 @@ var totalCrowns;
 
 function restoreOptions() {
   console.log("Restoring options");
-  chrome.storage.sync.get(['playSound', 'soundFile', 'automaticSelection', 'color', 'timeToWaitQuestion', 'satisfy', 'satisfyRate', 'timeToWait', 'timeToWait429', 'totalCrowns', 'account', 'password'], function (items) {
+  chrome.storage.sync.get(['playSound', 'soundFile', 'automaticSelection', 'color', 'timeToWaitQuestion', 'satisfy', 'satisfyRate', 'timeToWait', 'timeToWait429', 'totalCrowns', 'account', 'password', 'scheduledStart', 'showNotification'], function (items) {
     document.getElementById('totalCrowns').innerText = items.totalCrowns;
 
     document.getElementById('sound').checked = items.playSound;
@@ -33,7 +35,11 @@ function restoreOptions() {
 
     document.getElementById('account').value = items.account;
     document.getElementById('password').value = items.password;
+
+    document.getElementById('scheduledStart').checked = items.scheduledStart;
+    document.getElementById('showNotification').checked = items.showNotification;
   });
+  showNextStart();
   setTimeout(function () {
     document.getElementById('loadingIcon').style.display = "none";
     document.getElementById('optionsPage').style.display = "block";
@@ -48,6 +54,9 @@ function setDefaultOptions() {
   console.log("Default options");
   document.getElementById('account').value = "";
   document.getElementById('password').value = "";
+
+  document.getElementById('scheduledStart').checked = false;
+  document.getElementById('showNotification').checked = true;
 
   document.getElementById('sound').checked = true;
   document.getElementById('soundFile').value = "windows.wav";
@@ -94,6 +103,9 @@ function getValues() {
 
   account = document.getElementById('account').value;
   password = document.getElementById('password').value;
+
+  scheduledStart = document.getElementById('scheduledStart').checked;
+  showNotification = document.getElementById('showNotification').checked;
 }
 
 function errorCheck() {
@@ -135,9 +147,18 @@ function saveInformation() {
     timeToWait: timeToWait,
     timeToWait429: timeToWait429,
     account: account,
-    password: password
+    password: password,
+    scheduledStart: scheduledStart,
+    showNotification: showNotification
   }, function () {
     updateStatus("已儲存設定");
+    showNextStart();
+  });
+}
+
+function showNextStart() {
+  chrome.alarms.get('dailyStart', function (alarm) {
+    document.getElementById('nextStart').innerText = alarm ? new Date(alarm.scheduledTime).toLocaleString() : "尚未排程";
   });
 }
 
