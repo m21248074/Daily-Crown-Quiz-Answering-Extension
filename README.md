@@ -3,7 +3,7 @@
 自動作答 Wizard101 每日 10 份皇冠幣測驗的 Chrome 擴充功能 (Manifest V3)。
 自動登入、依序作答、跑完自動排下一次，需要手動處理的只剩每份測驗結束時的 CAPTCHA 驗證。
 
-本專案 fork 自 Cavey 的 [DCQAE](#原作者-readme)，原作者的說明保留在文件最下方。
+本專案以既有的 DCQAE 擴充功能為基礎修改而來，原作者已不可考，原本的說明保留在文件最下方的[原作者 README](#原作者-readme)。
 
 ## 功能
 
@@ -72,7 +72,7 @@ MIT License，見 [LICENSE](LICENSE)。
 
 ## 原作者 README
 
-以下為原作者 Cavey 的說明，原文保留。
+以下為原作者的說明，原文保留。
 
 # DCQAE
 Wizard101 Automatic Quiz Chrome Extension
