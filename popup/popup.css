@@ -1,0 +1,72 @@
+body {
+	width: 260px;
+	margin: 0;
+	font-family: sans-serif;
+	font-size: 14px;
+	background-color: white;
+	color: black;
+}
+
+.header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px;
+	background-color: green;
+	color: white;
+	font-size: 1.2em;
+}
+
+.icon {
+	width: 2em;
+	height: 2em;
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+td {
+	padding: 6px 10px;
+	border-bottom: 1px #e0e0e0 solid;
+}
+
+td:first-child {
+	color: #555555;
+	white-space: nowrap;
+}
+
+.buttons {
+	display: flex;
+	gap: 8px;
+	padding: 10px;
+}
+
+.buttons button {
+	flex: 1;
+	padding: 8px 4px;
+	font-size: 1em;
+	white-space: nowrap;
+	cursor: pointer;
+	border: 2px solid green;
+}
+
+.primary {
+	background-color: green;
+	color: white;
+}
+
+.primary:hover {
+	background-color: rgb(0, 150, 0);
+}
+
+.secondary {
+	background-color: whitesmoke;
+	color: black;
+}
+
+.secondary:hover {
+	background-color: green;
+	color: white;
+}

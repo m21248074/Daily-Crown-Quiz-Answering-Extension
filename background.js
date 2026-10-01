@@ -182,18 +182,13 @@ chrome.storage.onChanged.addListener(function (changes) {
 	}
 });
 
-//Browser icon clicked, open freekigames
-chrome.action.onClicked.addListener(tab => {
-	chrome.tabs.update(tab.id, { url: startUrl });
-});
-
 //Scheduled start: open a new tab when the quizzes reset, login.js takes it from there
 chrome.alarms.onAlarm.addListener(alarm => {
 	if (alarm.name != 'dailyStart')
 		return;
 	chrome.storage.sync.get(['scheduledStart'], function (items) {
 		if (items.scheduledStart)
-			chrome.tabs.create({ url: startUrl });
+			startRun();
 	});
 });
 
@@ -207,6 +202,11 @@ chrome.notifications.onClicked.addListener(async notificationId => {
 		focusTab(tabId);
 });
 
+//Open the quiz start page in a new tab, login.js takes it from there
+function startRun() {
+	chrome.tabs.create({ url: startUrl });
+}
+
 async function focusTab(tabId) {
 	const tab = await chrome.tabs.update(tabId, { active: true });
 	chrome.windows.update(tab.windowId, { focused: true });
@@ -219,6 +219,15 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			startProgress();
 			openThisQuiz = quizList[0];
 			openQuiz(sender.tab.id);
+			break;
+		case 'startRun':
+			startRun();
+			break;
+		case 'focusQuiz':
+			getQuizTabId().then(tabId => {
+				if (tabId !== undefined)
+					focusTab(tabId);
+			});
 			break;
 		case 'setCurrentQuiz':
 			currentQuiz = message.currentQuiz;
