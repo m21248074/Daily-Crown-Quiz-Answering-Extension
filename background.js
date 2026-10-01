@@ -22,6 +22,7 @@ const quizDict = {
 }
 const quizList = Object.keys(quizDict);
 const startUrl = "https://www.wizard101.com/quiz/trivia/game/wizard101-trivia";
+const historyUrl = "https://www.wizard101.com/user/kiaccounts/crownshistory/game";
 
 //Create a user when they first install the extension, use default values
 function createUser() {
@@ -198,16 +199,28 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 				});
 			});
 			break;
+		case "refreshSchedule":
+			//Read the next reset time from the crowns history page in a background tab
+			chrome.tabs.create({ url: historyUrl, active: false }).then(tab =>
+				chrome.storage.session.set({ scheduleTabId: tab.id }));
+			break;
 		case "scheduleNext":
-			chrome.storage.sync.get(['scheduledStart'], function (items) {
-				if (items.scheduledStart && message.when > Date.now())
-					chrome.alarms.create('dailyStart', { when: message.when });
+			chrome.storage.sync.get(['scheduledStart'], async function (items) {
+				const scheduled = Boolean(items.scheduledStart && message.when > Date.now());
+				if (scheduled)
+					await chrome.alarms.create('dailyStart', { when: message.when });
+				chrome.runtime.sendMessage({ greeting: 'scheduleUpdated', scheduled: scheduled }).catch(() => { });
+				const { scheduleTabId } = await chrome.storage.session.get('scheduleTabId');
+				if (scheduleTabId === sender.tab.id) {
+					chrome.storage.session.remove('scheduleTabId');
+					chrome.tabs.remove(sender.tab.id);
+				}
 			});
 			break;
 		case "endQuiz":
 			chrome.notifications.clear('captcha');
 			chrome.tabs.update(sender.tab.id, {
-				url: "https://www.wizard101.com/user/kiaccounts/crownshistory/game"
+				url: historyUrl
 			});
 			break;
 	}

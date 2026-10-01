@@ -157,7 +157,14 @@ function saveInformation() {
     focusOnCaptcha: focusOnCaptcha
   }, function () {
     updateStatus("已儲存設定");
-    showNextStart();
+    chrome.alarms.get('dailyStart', function (alarm) {
+      if (scheduledStart && !alarm) {
+        document.getElementById('nextStart').innerText = "正在讀取皇冠幣紀錄…";
+        chrome.runtime.sendMessage({ greeting: 'refreshSchedule' });
+      }
+      else
+        showNextStart();
+    });
   });
 }
 
@@ -178,6 +185,15 @@ function updateStatus(message) {
 function playAudio() {
   new Audio(chrome.runtime.getURL("sounds/" + document.getElementById('soundFile').value)).play();
 }
+
+chrome.runtime.onMessage.addListener(function (message) {
+  if (message.greeting != 'scheduleUpdated')
+    return;
+  if (message.scheduled)
+    showNextStart();
+  else if (document.getElementById('scheduledStart').checked)
+    document.getElementById('nextStart').innerText = "尚未排程 (目前測驗已可作答，跑完一輪後會自動排程)";
+});
 
 window.onload = function () {
   restoreOptions();

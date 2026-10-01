@@ -23,5 +23,6 @@ if (last) {
   hintElement.innerText = `下次更新時間約為 ${last.toLocaleString()}`;
   hintElement.style.color = 'red';
   hint.append(hintElement);
-  chrome.runtime.sendMessage({ greeting: 'scheduleNext', when: last.getTime() });
 }
+//No recent earnings means the quizzes are available now, so there is nothing to schedule
+chrome.runtime.sendMessage({ greeting: 'scheduleNext', when: last ? last.getTime() : undefined });
