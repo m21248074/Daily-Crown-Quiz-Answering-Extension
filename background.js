@@ -83,6 +83,70 @@ async function getQuizTabId() {
 	return quizTabId;
 }
 
+//Progress of the current run. Kept in local storage so the badge and popup survive service worker restarts.
+//state: idle | running | captcha | done
+async function updateProgress(changes) {
+	const { progress } = await chrome.storage.local.get('progress');
+	const updated = { ...progress, ...changes };
+	await chrome.storage.local.set({ progress: updated });
+	showBadge(updated);
+	return updated;
+}
+
+function startProgress() {
+	return updateProgress({ state: "running", done: 0, earned: 0, startedAt: Date.now(), summaryShown: false });
+}
+
+//Called when a quiz is left behind, either answered (earned) or already done today
+async function finishQuiz(message, state) {
+	const { progress } = await chrome.storage.local.get('progress');
+	return updateProgress({
+		state: state,
+		done: quizList.indexOf(message.quizName) + 1,
+		earned: (progress?.earned || 0) + (message.earned ? 1 : 0)
+	});
+}
+
+//Sent once per run, from the crowns history page so the next scheduled start is known
+async function showSummary(nextStart) {
+	const { progress } = await chrome.storage.local.get('progress');
+	if (!progress || progress.state != "done" || progress.summaryShown)
+		return;
+	await updateProgress({ summaryShown: true });
+	const { showNotification } = await chrome.storage.sync.get('showNotification');
+	if (!showNotification)
+		return;
+	const skipped = progress.done - progress.earned;
+	let text = `本次獲得 ${progress.earned * 10} 皇冠幣 (作答 ${progress.earned} 份`;
+	text += skipped ? `，${skipped} 份今日已完成)` : ")";
+	text += nextStart ? `\n下次自動開始: ${new Date(nextStart).toLocaleString()}` : "";
+	chrome.notifications.create('summary', {
+		type: "basic",
+		iconUrl: "icons/icon_128.png",
+		title: "今日測驗完成",
+		message: text
+	});
+}
+
+function showBadge(progress) {
+	const [text, color] = {
+		running: [`${progress.done}/${quizList.length}`, "#1a73e8"],
+		captcha: ["!", "#d93025"],
+		done: ["✓", "#00b300"]
+	}[progress.state] || ["", "#00b300"];
+	chrome.action.setBadgeText({ text: text });
+	chrome.action.setBadgeBackgroundColor({ color: color });
+}
+
+//A run cannot survive a browser restart, so don't show a stale running state
+chrome.runtime.onStartup.addListener(async () => {
+	const { progress } = await chrome.storage.local.get('progress');
+	if (progress && (progress.state == "running" || progress.state == "captcha"))
+		updateProgress({ state: "idle" });
+	else if (progress)
+		showBadge(progress);
+});
+
 //When the extension is installed, check if user already has saved data, create a new user
 chrome.runtime.onInstalled.addListener((details) => {
 	if (details.reason == "install")
@@ -118,18 +182,13 @@ chrome.storage.onChanged.addListener(function (changes) {
 	}
 });
 
-//Browser icon clicked, open freekigames
-chrome.action.onClicked.addListener(tab => {
-	chrome.tabs.update(tab.id, { url: startUrl });
-});
-
 //Scheduled start: open a new tab when the quizzes reset, login.js takes it from there
 chrome.alarms.onAlarm.addListener(alarm => {
 	if (alarm.name != 'dailyStart')
 		return;
 	chrome.storage.sync.get(['scheduledStart'], function (items) {
 		if (items.scheduledStart)
-			chrome.tabs.create({ url: startUrl });
+			startRun();
 	});
 });
 
@@ -143,6 +202,11 @@ chrome.notifications.onClicked.addListener(async notificationId => {
 		focusTab(tabId);
 });
 
+//Open the quiz start page in a new tab, login.js takes it from there
+function startRun() {
+	chrome.tabs.create({ url: startUrl });
+}
+
 async function focusTab(tabId) {
 	const tab = await chrome.tabs.update(tabId, { active: true });
 	chrome.windows.update(tab.windowId, { focused: true });
@@ -152,8 +216,18 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 	switch (message.greeting) {
 		case 'startQuiz':
 			setQuizTab(sender.tab.id);
+			startProgress();
 			openThisQuiz = quizList[0];
 			openQuiz(sender.tab.id);
+			break;
+		case 'startRun':
+			startRun();
+			break;
+		case 'focusQuiz':
+			getQuizTabId().then(tabId => {
+				if (tabId !== undefined)
+					focusTab(tabId);
+			});
 			break;
 		case 'setCurrentQuiz':
 			currentQuiz = message.currentQuiz;
@@ -163,6 +237,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			break;
 		case 'nextQuiz':
 			chrome.notifications.clear('captcha');
+			finishQuiz(message, "running");
 			getOptions();
 			quizIndex = quizList.indexOf(currentQuiz) + 1;
 			openThisQuiz = quizList[quizIndex];
@@ -185,6 +260,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			break;
 		case "captchaReady":
 			setQuizTab(sender.tab.id);
+			updateProgress({ state: "captcha" });
 			chrome.storage.sync.get(['showNotification', 'focusOnCaptcha'], function (items) {
 				if (items.focusOnCaptcha)
 					focusTab(sender.tab.id);
@@ -210,6 +286,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 				if (scheduled)
 					await chrome.alarms.create('dailyStart', { when: message.when });
 				chrome.runtime.sendMessage({ greeting: 'scheduleUpdated', scheduled: scheduled }).catch(() => { });
+				showSummary(scheduled ? message.when : undefined);
 				const { scheduleTabId } = await chrome.storage.session.get('scheduleTabId');
 				if (scheduleTabId === sender.tab.id) {
 					chrome.storage.session.remove('scheduleTabId');
@@ -219,6 +296,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			break;
 		case "endQuiz":
 			chrome.notifications.clear('captcha');
+			finishQuiz(message, "done");
 			chrome.tabs.update(sender.tab.id, {
 				url: historyUrl
 			});

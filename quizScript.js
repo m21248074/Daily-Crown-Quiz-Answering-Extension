@@ -33,9 +33,9 @@ getData().then(function () {
 			//if throttle page, the quiz is already done today: go to the next quiz, or finish after the last one.
 			if (document.getElementsByClassName('quizThrottle')[0]) {
 				if (quizName != "Zafaria")
-					chrome.runtime.sendMessage({ greeting: 'nextQuiz', when: "now" });
+					chrome.runtime.sendMessage({ greeting: 'nextQuiz', when: "now", quizName: quizName, earned: false });
 				else
-					chrome.runtime.sendMessage({ greeting: 'endQuiz' });
+					chrome.runtime.sendMessage({ greeting: 'endQuiz', quizName: quizName, earned: false });
 			}
 			else {
 				//results page, open the captcha or load the next quiz.
@@ -56,11 +56,11 @@ getData().then(function () {
 				}
 				else if (quizName != "Zafaria") {
 					addCrowns();
-					chrome.runtime.sendMessage({ greeting: 'nextQuiz' });
+					chrome.runtime.sendMessage({ greeting: 'nextQuiz', quizName: quizName, earned: true });
 				} else
 				{
 					addCrowns();
-					chrome.runtime.sendMessage({ greeting: 'endQuiz' });
+					chrome.runtime.sendMessage({ greeting: 'endQuiz', quizName: quizName, earned: true });
 				}
 			}
 		}

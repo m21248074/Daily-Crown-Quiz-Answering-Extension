@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" type="text/css" href="popup.css">
+  <script src="popup.js"></script>
+  <title>每日皇冠幣測驗答題擴展插件</title>
+</head>
+
+<body>
+  <div class="header">
+    <img class="icon" src="../icons/icon_128.png">
+    <span>每日皇冠幣測驗</span>
+  </div>
+  <table>
+    <tr>
+      <td>狀態</td>
+      <td id="state"></td>
+    </tr>
+    <tr>
+      <td>本次獲得</td>
+      <td id="earned"></td>
+    </tr>
+    <tr>
+      <td>下次自動開始</td>
+      <td id="nextStart"></td>
+    </tr>
+    <tr>
+      <td>累計皇冠幣</td>
+      <td id="totalCrowns"></td>
+    </tr>
+  </table>
+  <div class="buttons">
+    <button id="captcha" class="primary" style="display: none;">前往驗證</button>
+    <button id="start" class="primary">開始</button>
+    <button id="options" class="secondary">選項</button>
+  </div>
+</body>
+
+</html>
