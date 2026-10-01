@@ -30,9 +30,13 @@ getData().then(function () {
 		chrome.runtime.sendMessage({ greeting: 'setCurrentQuiz', currentQuiz: quizName });
 		//If it's not a question. Page is either results page or throttle page.
 		if (!document.getElementsByClassName('quizQuestion')[0]) {
-			//if throttle page, go to the next quiz.
-			if (document.getElementsByClassName('quizThrottle')[0] && quizName != "Zafaria")
-				chrome.runtime.sendMessage({ greeting: 'nextQuiz', when: "now" });
+			//if throttle page, the quiz is already done today: go to the next quiz, or finish after the last one.
+			if (document.getElementsByClassName('quizThrottle')[0]) {
+				if (quizName != "Zafaria")
+					chrome.runtime.sendMessage({ greeting: 'nextQuiz', when: "now" });
+				else
+					chrome.runtime.sendMessage({ greeting: 'endQuiz' });
+			}
 			else {
 				//results page, open the captcha or load the next quiz.
 				if (document.getElementsByClassName('rewardText').length && document.getElementsByClassName('rewardText')[0].innerText[0] == 'Y') {
