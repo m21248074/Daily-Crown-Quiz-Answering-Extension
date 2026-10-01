@@ -38,6 +38,7 @@ getData().then(function () {
 				if (document.getElementsByClassName('rewardText').length && document.getElementsByClassName('rewardText')[0].innerText[0] == 'Y') {
 					document.getElementsByClassName("loginitem")[0].click();
 					chrome.runtime.sendMessage({ greeting: 'captchaReady', quizName: quizName });
+					flashTitle();
 					if (playSound) {
 						var sound;
 						sound = new Audio(chrome.runtime.getURL("sounds/" + soundFile));
@@ -64,6 +65,16 @@ getData().then(function () {
 		}
 	}
 })
+
+//Flash the tab title so a waiting captcha is visible even without system notifications
+function flashTitle() {
+	const originalTitle = document.title;
+	let flashing = false;
+	setInterval(() => {
+		flashing = !flashing;
+		document.title = flashing ? "⚠ 需要驗證" : originalTitle;
+	}, 1000);
+}
 
 function addCrowns() {
 	console.log(totalCrowns);

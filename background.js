@@ -40,7 +40,8 @@ function createUser() {
 			account: "",
 			password: "",
 			scheduledStart: false,
-			showNotification: true
+			showNotification: true,
+			focusOnCaptcha: true
 		});
 		resolve();
 	});
@@ -51,11 +52,13 @@ function onUpdate() {
 		automaticSelection: true
 	});
 	//Fill in options added after the user installed the extension
-	chrome.storage.sync.get(['scheduledStart', 'showNotification'], function (items) {
+	chrome.storage.sync.get(['scheduledStart', 'showNotification', 'focusOnCaptcha'], function (items) {
 		if (items.scheduledStart === undefined)
 			chrome.storage.sync.set({ scheduledStart: false });
 		if (items.showNotification === undefined)
 			chrome.storage.sync.set({ showNotification: true });
+		if (items.focusOnCaptcha === undefined)
+			chrome.storage.sync.set({ focusOnCaptcha: true });
 	});
 }
 
@@ -135,11 +138,14 @@ chrome.notifications.onClicked.addListener(async notificationId => {
 		return;
 	chrome.notifications.clear('captcha');
 	const tabId = await getQuizTabId();
-	if (tabId === undefined)
-		return;
+	if (tabId !== undefined)
+		focusTab(tabId);
+});
+
+async function focusTab(tabId) {
 	const tab = await chrome.tabs.update(tabId, { active: true });
 	chrome.windows.update(tab.windowId, { focused: true });
-});
+}
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 	switch (message.greeting) {
@@ -178,7 +184,9 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 			break;
 		case "captchaReady":
 			setQuizTab(sender.tab.id);
-			chrome.storage.sync.get(['showNotification'], function (items) {
+			chrome.storage.sync.get(['showNotification', 'focusOnCaptcha'], function (items) {
+				if (items.focusOnCaptcha)
+					focusTab(sender.tab.id);
 				if (!items.showNotification)
 					return;
 				chrome.notifications.create('captcha', {

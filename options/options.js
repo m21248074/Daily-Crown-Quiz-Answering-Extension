@@ -9,6 +9,7 @@ var timeToWait;
 var timeToWait429;
 var scheduledStart;
 var showNotification;
+var focusOnCaptcha;
 
 let account;
 let password;
@@ -18,7 +19,7 @@ var totalCrowns;
 
 function restoreOptions() {
   console.log("Restoring options");
-  chrome.storage.sync.get(['playSound', 'soundFile', 'automaticSelection', 'color', 'timeToWaitQuestion', 'satisfy', 'satisfyRate', 'timeToWait', 'timeToWait429', 'totalCrowns', 'account', 'password', 'scheduledStart', 'showNotification'], function (items) {
+  chrome.storage.sync.get(['playSound', 'soundFile', 'automaticSelection', 'color', 'timeToWaitQuestion', 'satisfy', 'satisfyRate', 'timeToWait', 'timeToWait429', 'totalCrowns', 'account', 'password', 'scheduledStart', 'showNotification', 'focusOnCaptcha'], function (items) {
     document.getElementById('totalCrowns').innerText = items.totalCrowns;
 
     document.getElementById('sound').checked = items.playSound;
@@ -38,6 +39,7 @@ function restoreOptions() {
 
     document.getElementById('scheduledStart').checked = items.scheduledStart;
     document.getElementById('showNotification').checked = items.showNotification;
+    document.getElementById('focusOnCaptcha').checked = items.focusOnCaptcha;
   });
   showNextStart();
   setTimeout(function () {
@@ -57,6 +59,7 @@ function setDefaultOptions() {
 
   document.getElementById('scheduledStart').checked = false;
   document.getElementById('showNotification').checked = true;
+  document.getElementById('focusOnCaptcha').checked = true;
 
   document.getElementById('sound').checked = true;
   document.getElementById('soundFile').value = "windows.wav";
@@ -106,6 +109,7 @@ function getValues() {
 
   scheduledStart = document.getElementById('scheduledStart').checked;
   showNotification = document.getElementById('showNotification').checked;
+  focusOnCaptcha = document.getElementById('focusOnCaptcha').checked;
 }
 
 function errorCheck() {
@@ -149,7 +153,8 @@ function saveInformation() {
     account: account,
     password: password,
     scheduledStart: scheduledStart,
-    showNotification: showNotification
+    showNotification: showNotification,
+    focusOnCaptcha: focusOnCaptcha
   }, function () {
     updateStatus("已儲存設定");
     showNextStart();
